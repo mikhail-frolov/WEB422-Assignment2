@@ -19,7 +19,7 @@ const perPage = 10; // 10 sale items per page
 // template for each sale 
 const saleTableTemplate = _.template(
     `<% _.forEach(saleData, function(sale) { %>
-        <tr data-id=<%- sale._id %>>
+        <tr style="cursor: pointer" data-id=<%- sale._id %>>
             <td><%- sale.customer.email %></td>
             <td><%- sale.storeLocation %></td>
             <td><%- sale.items.length %></td>
@@ -32,11 +32,11 @@ const saleTableTemplate = _.template(
 // body template for customer
 const saleModelBodyTemplate = _.template(
     `<h4>Customer</h4>
-<strong>email:</strong><%- this.customer.email %><br>
-<strong>age:</strong><%- this.customer.age %><br>
-<strong>satisfaction:</strong> <%- this.customer.satisfaction %> / 5
+<strong>email: </strong><%- sale.customer.email %><br>
+<strong>age: </strong><%- sale.customer.age %><br>
+<strong>satisfaction: </strong> <%- sale.customer.satisfaction %> / 5
     <br><br>
-<h4> Items: $<%- this.total.toFixed(2) %> </h4>
+<h4> Items: $<%- sale.total.toFixed(2) %> </h4>
 <table class="table">
 <thead>
 <tr>
@@ -46,11 +46,11 @@ const saleModelBodyTemplate = _.template(
 </tr>
 </thead>
 <tbody>
-<% _.forEach(this.items, function(sale) { %>
-    <tr data-id = <%- sale._id %>>
-        <td><%- sale.name %></td>
-        <td><%- sale.quantity %></td>
-        <td><%- sale.price %></td>
+<% _.forEach(sale.items, function(sales) { %>
+    <tr data-id = <%- sales._id %>>
+        <td><%- sales.name %></td>
+        <td><%- sales.quantity %></td>
+        <td><%- sales.price %></td>
     </tr>
  <% }); %>
 </tbody>
@@ -75,8 +75,21 @@ $(function() {
     loadSaleData();
 });
 
+
+function getSaleModelById(id) {
+
+    let retVal = null;
+    for (let i = 0; i < saleData.length; i++) {
+        if (saleData[i]._id == id) {
+            retVal = _.cloneDeep(saleData[i]);
+        }
+
+    }
+    return retVal;
+}
+
 // wiring up click events
-$(".sale-table tbody").on("click", "tr", function() {
+$("#sale-table tbody").on("click", "tr", function() {
     // watch the tbody element contained within an element with class "sale-table" and execute code whenever new (or existing) <tr> elements are clicked
     console.log("table row clicked!");
 
@@ -84,7 +97,7 @@ $(".sale-table tbody").on("click", "tr", function() {
     let clickedId = $(this).attr("data-id");
 
     // finding the sale with the same id as the clicked one using Lodash method find()
-    let clickedSale = saleData.find(({ _id }) => _id == clickedId);
+    let clickedSale = getSaleModelById(clickedId);
 
     // assigning a new property to our "clickedSale" called "total" and initializing to 0.
     clickedSale.total = 0;
@@ -96,18 +109,24 @@ $(".sale-table tbody").on("click", "tr", function() {
 
     }
 
-    // Title Sale: ID in the popup modal of the sale
-    $("#sale-modal h4").html(`Sale: ${clickedSale._id}`);
-
-    // Full HTML code to the body of our modal popup
-    $("modal-body").html(saleModelBodyTemplate(clickedSale));
-
     $('#sale-modal').modal({ // show the modal programmatically
         backdrop: 'static', // disable clicking on the backdrop to close
         keyboard: false // disable using the keyboard to close in our assignment is "esc"
     });
 
+    // Title Sale: ID in the popup modal of the sale
+    $(".modal-title").html(`Sale: ${clickedSale._id}`);
+
+    // clear modal body
+    $(".modal-body").empty();
+
+    // Full HTML code to the body of our modal popup
+    $(".modal-body").html(saleModelBodyTemplate({ 'sale': clickedSale }));
+
+
+
 });
+
 
 // click event for previous-page button
 $("#previous-page").on("click", function() {
@@ -122,7 +141,7 @@ $("#previous-page").on("click", function() {
 });
 
 // click event for next-page button
-$("#next-page").on("click", function(e) {
+$("#next-page").on("click", function() {
 
     // increasing page value by 1
     page++;
